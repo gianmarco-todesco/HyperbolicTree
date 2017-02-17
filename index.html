@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <title>Hyperbolic Tree Viewer</title>      
+        <link rel="stylesheet" type="text/css" href="style.css">
+        <script src="lib/babylon.custom.js"></script>
+        <script src="lib/hand.js"></script>
+        <script src="HyperbolicTreeViewer.js"></script>
+        <script
+            src="https://code.jquery.com/jquery-3.1.1.min.js"
+            integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+            crossorigin="anonymous"></script>
+    </head>
+    <body>
+    
+        <div id="maincontainer">
+            <div id="titleBar">
+                <h1>Hyperbolic Tree Viewer</h1>
+                <h2>(a DV Experiment)</h2>
+            </div>
+
+            <div id="canvasWrapper">
+                <canvas id="renderCanvas"></canvas>                
+            </div>
+
+            <div id="leftcolumn">
+                <h2>Instructions</h2>
+                <p>Click&drag to rotate the sphere</p>
+                <p>Up/Down arrows to zoom in/out</p>
+                <p>Click a node to select it</p>
+            </div>
+        
+            <div id="footer">
+                <a href="http://www.digitalvideo.eu.com">Digital Video s.r.l.</a>
+            </div>
+        </div>
+        
+        <script>
+            initialize(document.getElementById("renderCanvas"));
+        </script>
+    </body>
+</html>
