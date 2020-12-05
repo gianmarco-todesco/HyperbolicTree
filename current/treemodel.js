@@ -51,6 +51,9 @@ class TreeModel {
             subdivisions:5,
             flat:false
         }, scene);
+        let material = ball.material = new BABYLON.StandardMaterial('m',scene);
+        material.diffuseColor.set(0.7,0.7,0.7);
+        ball.registerInstancedBuffer("color", 4);
         this.balls = [];
         this.nodes.forEach((nd,i) => {
             let b = i==0 ? ball : ball.createInstance('i'+i);
@@ -59,9 +62,14 @@ class TreeModel {
             b.scaling.set(s,s,s);
             this.balls.push(b);
             b._node = nd;
+            b.instancedBuffers.color = 
+                i%2 == 0 ? new BABYLON.Color4(0.8,0.5,0.1,1.0)
+                : new BABYLON.Color4(0.1,0.5,0.8,1.0);
+            b.nodeIndex = i;
         });
         
     }
+
 
     transform(matrix) {
         this.hMatrix = this.hMatrix.multiply(matrix);
@@ -73,6 +81,13 @@ class TreeModel {
             let s = nd.s;
             b.scaling.set(s,s,s);
         });
+    }
+
+    selectNode(nodeIndex) {
+        if(0<=nodeIndex && nodeIndex<this.balls.length) {
+            let ball = this.balls[nodeIndex];
+            ball.instancedBuffers.color = new BABYLON.Color4(0.8,0.4,0.1,1.0);
+        }
     }
 }
 

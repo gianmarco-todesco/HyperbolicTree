@@ -8,7 +8,9 @@ window.addEventListener("DOMContentLoaded", function() {
     
     viewer.runRenderLoop();
 
-    viewer.scene.onKeyboardObservable.add((kbInfo) => {
+    let scene = viewer.scene;
+
+    scene.onKeyboardObservable.add((kbInfo) => {
         switch (kbInfo.type) {
             case BABYLON.KeyboardEventTypes.KEYDOWN:
                 if(kbInfo.event.key == "ArrowUp") hTranslate(2,-0.1);
@@ -25,6 +27,15 @@ window.addEventListener("DOMContentLoaded", function() {
                 break;
         }
     });
+
+    scene.onPointerDown = function(evt, pickInfo) {
+        if(pickInfo.hit && pickInfo.pickedMesh) {
+            let mesh = pickInfo.pickedMesh;
+            console.log(mesh.nodeIndex);
+            tree.selectNode(mesh.nodeIndex);
+        }
+    }
+
 });
 
 function hTranslate(direction, amount) {
