@@ -1,5 +1,8 @@
 class TreeModel {
     constructor(scene) {
+        this.nodeColor = new BABYLON.Color4(0.02,0.6,0.7,1.0);
+        this.selectedNodeColor = new BABYLON.Color4(0.9,0.8,0.1,1.0);
+
         let mb = new H3ModelBuilder();
         mb.addModel(5);
         this.nodes = mb.nodes;
@@ -10,6 +13,8 @@ class TreeModel {
         material.setMatrix("hMatrix", this.hMatrix);
         this.balls = [];
         this.createNodes(scene);
+        this.scene = scene;
+        
     }
 
     setHMatrix(hMatrix) {
@@ -52,9 +57,10 @@ class TreeModel {
             flat:false
         }, scene);
         let material = ball.material = new BABYLON.StandardMaterial('m',scene);
-        material.diffuseColor.set(0.7,0.7,0.7);
+        material.diffuseColor.set(1,1,1);
         ball.registerInstancedBuffer("color", 4);
         this.balls = [];
+        const me = this;
         this.nodes.forEach((nd,i) => {
             let b = i==0 ? ball : ball.createInstance('i'+i);
             b.position.copyFrom(nd.p);
@@ -62,10 +68,9 @@ class TreeModel {
             b.scaling.set(s,s,s);
             this.balls.push(b);
             b._node = nd;
-            b.instancedBuffers.color = 
-                i%2 == 0 ? new BABYLON.Color4(0.8,0.5,0.1,1.0)
-                : new BABYLON.Color4(0.1,0.5,0.8,1.0);
+            b.instancedBuffers.color = this.nodeColor.clone();
             b.nodeIndex = i;
+            b.isSelected = false;
         });
         
     }
@@ -83,11 +88,46 @@ class TreeModel {
         });
     }
 
+    _getNode(nodeIndex) { 
+        return 0<=nodeIndex && nodeIndex<this.balls.length 
+            ? this.balls[nodeIndex] : null;
+    }
+    _setNodeColor(ball, color) {
+        ball.instancedBuffers.color.copyFrom(color);
+    }
     selectNode(nodeIndex) {
-        if(0<=nodeIndex && nodeIndex<this.balls.length) {
-            let ball = this.balls[nodeIndex];
-            ball.instancedBuffers.color = new BABYLON.Color4(0.8,0.4,0.1,1.0);
+        let ball = this._getNode(nodeIndex);
+        if(ball) { 
+            ball.isSelected = true; 
+            this._setNodeColor(ball, this.selectedNodeColor);
         }
+    }
+    unselectNode(nodeIndex) {
+        let ball = this._getNode(nodeIndex);
+        if(ball) { 
+            ball.isSelected = false; 
+            this._setNodeColor(ball, this.nodeColor);
+        }
+    }
+    isSelected(nodeIndex) {
+        let ball = this._getNode(nodeIndex);
+        return ball && ball.isSelected;
+    }
+    selectNone() {
+        const me = this;
+        this.balls.filter(b=>b.isSelected).forEach(b => {
+            b.isSelected = false;
+            me._setNodeColor(b, me.nodeColor);
+        });
+    }
+
+    pickNodeIndex(mousex, mousey) {
+        let r = this.scene.pick(mousex, mousey);
+        if(r.hit && r.pickedMesh) {
+            let mesh = r.pickedMesh;
+            if(mesh.nodeIndex != undefined) return mesh.nodeIndex;
+        }
+        return -1;
     }
 }
 
