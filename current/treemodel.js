@@ -1,20 +1,12 @@
 class TreeModel {
+
     constructor(scene) {
+        this.scene = scene;        
         this.nodeColor = new BABYLON.Color4(0.02,0.6,0.7,1.0);
         this.selectedNodeColor = new BABYLON.Color4(0.9,0.8,0.1,1.0);
 
-        let mb = new H3ModelBuilder();
-        mb.addModel(5);
-        this.nodes = mb.nodes;
-        let mesh = this.mesh = mb.makeMesh(scene);
-        let material = this.material = this.createH3Material("shader", scene);
-        mesh.material = material;
-        this.hMatrix = BABYLON.Matrix.Identity();
-        material.setMatrix("hMatrix", this.hMatrix);
-        this.balls = [];
-        this.createNodes(scene);
-        this.scene = scene;
-        
+        let mb = new H3ModelBuilder(this);
+        mb.addModel(5, scene);
     }
 
     setHMatrix(hMatrix) {
@@ -22,22 +14,6 @@ class TreeModel {
         this.material.setMatrix("hMatrix", this.hMatrix);
     }
 
-    createH3Material(name, scene) {
-        let material =  new BABYLON.ShaderMaterial(name, scene, {
-            vertex: "H3",
-            fragment: "H3",
-        },
-        {
-            attributes: ["position", "normal", "uv", "extra1", "extra2"],
-            uniforms: [
-                "world", "worldView", "worldViewProjection", 
-                "view", "projection",
-                "hMatrix"
-            ]
-        });
-        material.setMatrix("hMatrix", BABYLON.Matrix.Identity());
-        return material;
-    }
 
     updateNodesPositions() {
         let hMatrix = this.hMatrix;
@@ -49,39 +25,14 @@ class TreeModel {
         })
     }
 
-    createNodes(scene) {
-        this.updateNodesPositions();
-        let ball = BABYLON.MeshBuilder.CreateIcoSphere('a',{
-            radius:0.2,
-            subdivisions:5,
-            flat:false
-        }, scene);
-        let material = ball.material = new BABYLON.StandardMaterial('m',scene);
-        material.diffuseColor.set(1,1,1);
-        ball.registerInstancedBuffer("color", 4);
-        this.balls = [];
-        const me = this;
-        this.nodes.forEach((nd,i) => {
-            let b = i==0 ? ball : ball.createInstance('i'+i);
-            b.position.copyFrom(nd.p);
-            let s = nd.s;
-            b.scaling.set(s,s,s);
-            this.balls.push(b);
-            b._node = nd;
-            b.instancedBuffers.color = this.nodeColor.clone();
-            b.nodeIndex = i;
-            b.isSelected = false;
-        });
-        
-    }
-
+    
 
     transform(matrix) {
         this.hMatrix = this.hMatrix.multiply(matrix);
         this.material.setMatrix("hMatrix", this.hMatrix);
         this.updateNodesPositions();
-        this.balls.forEach((b,i) => {
-            let nd = b._node;
+        this.nodes.forEach((nd,i) => {
+            let b = nd.ball;
             b.position.copyFrom(nd.p);
             let s = nd.s;
             b.scaling.set(s,s,s);
@@ -121,6 +72,9 @@ class TreeModel {
         });
     }
 
+    selectSubTree(nodeIndex) {
+        
+    }
     pickNodeIndex(mousex, mousey) {
         let r = this.scene.pick(mousex, mousey);
         if(r.hit && r.pickedMesh) {
@@ -133,7 +87,8 @@ class TreeModel {
 
 
 class H3ModelBuilder {
-    constructor() {
+    constructor(model) {
+        this.model = model;
         this.positions = [];
         this.indices = [];
         this.extra1 = [];
@@ -210,28 +165,30 @@ class H3ModelBuilder {
         this.k += n*m;        
     }
 
-    addNode() {
+    addNode(parentNode) {
         let p1 = BABYLON.Vector3.TransformCoordinates(
             BABYLON.Vector3.Zero(), this.matrix);
         let p2 = BABYLON.Vector3.TransformCoordinates(
             this.small, this.matrix);
-            
-        this.nodes.push({p1,p2});
+        let newNode = { p1, p2, parent: parentNode, children:[] };           
+        this.nodes.push(newNode);
+        if(parentNode != null) parentNode.children.push(newNode);
+        return newNode;
     }
 
-    _addModel(level) {
+    _addModel(level, parentNode) {
         let branchLength = 1.8;
         let count = 1;
         this.addBranch(branchLength,10);
         this.pushMatrix();
         this.hTranslate(1,branchLength);
-        this.addNode();
+        let node = this.addNode(parentNode);
         if(level > 0) {
             for(let i=0; i<4; i++) {
                 this.pushMatrix();
                 this.rotateY(i*Math.PI/2);
                 this.rotateZ(Math.PI/2);
-                count += this._addModel(level-1);
+                count += this._addModel(level-1, node);
                 this.popMatrix();    
             }
         }
@@ -239,16 +196,26 @@ class H3ModelBuilder {
         return count;
     }
 
-    addModel(level) {
+    addModel(level, scene) {
         this.pushMatrix();
         this.hTranslate(1,-1.6);
-        this.addNode();
-        let count = this._addModel(level);
+        this.model.root = this.addNode(null);
+        let count = this._addModel(level, this.model.root);
         this.hTranslate(1,1.8);
         
         
         this.popMatrix();
         console.log("node count = " + count);
+
+        this.model.nodes = this.nodes;
+        this.model.mesh = this.makeMesh(scene);
+
+        let material = this.model.material = this.createH3Material("shader", scene);
+        this.model.mesh.material = material;
+        this.model.hMatrix = BABYLON.Matrix.Identity();
+        material.setMatrix("hMatrix", this.model.hMatrix);
+
+        this.createNodes(scene);
     }
 
     makeMesh(scene) {
@@ -269,4 +236,52 @@ class H3ModelBuilder {
 
         return mesh;
     }
+
+    createH3Material(name, scene) {
+        let material =  new BABYLON.ShaderMaterial(name, scene, {
+            vertex: "H3",
+            fragment: "H3",
+        },
+        {
+            attributes: ["position", "normal", "uv", "extra1", "extra2"],
+            uniforms: [
+                "world", "worldView", "worldViewProjection", 
+                "view", "projection",
+                "hMatrix"
+            ]
+        });
+        material.setMatrix("hMatrix", BABYLON.Matrix.Identity());
+        return material;
+    }
+
+    createNodes(scene) {
+        this.model.updateNodesPositions();
+
+        let ball = BABYLON.MeshBuilder.CreateIcoSphere('a',{
+            radius:0.2,
+            subdivisions:5,
+            flat:false
+        }, scene);
+        let material = ball.material = new BABYLON.StandardMaterial('m',scene);
+        material.diffuseColor.set(1,1,1);
+        ball.registerInstancedBuffer("color", 4);
+        let balls = this.model.balls = [];
+        const me = this;
+        let nodeColor = this.model.nodeColor;
+
+        this.model.nodes.forEach((nd,i) => {
+            let b = i==0 ? ball : ball.createInstance('i'+i);
+            b.position.copyFrom(nd.p);
+            let s = nd.s;
+            b.scaling.set(s,s,s);
+            balls.push(b);
+            // b._node = nd;
+            nd.ball = b;
+            b.instancedBuffers.color = nodeColor.clone();
+            b.nodeIndex = i;
+            b.isSelected = false;
+        });
+        
+    }
+
 }

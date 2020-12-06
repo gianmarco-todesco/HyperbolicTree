@@ -53,6 +53,38 @@ class Viewer {
     
         return imat.multiply(localMatrix).multiply(mat);
     }
+
+
+    
+    createLabel() {
+        let scene = this.scene;
+        let a = BABYLON.MeshBuilder.CreatePlane('label', {width:0.3, height:0.07}, scene);
+        a.position.y = 0.25;
+        a.bakeCurrentTransformIntoVertices();
+        a.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+        a.material = new BABYLON.StandardMaterial('mat', scene);
+        let tw=256, th=64;
+        var dt = a.material.diffuseTexture = new BABYLON.DynamicTexture('txt', {
+            width:tw, height:th
+        }, scene);
+        dt.hasAlpha = true;
+        dt.getContext().clearRect(0,0,dt.width,dt.height);
+
+        // dt.drawText("Grass", 5, 44, font, "white", "transparent", true, true);
+        let ctx = dt.getContext();
+        ctx.font = "bold 50px Calibri";
+
+        a.setText = (t) => {
+            ctx.clearRect(0,0,tw,th);
+            let w = ctx.measureText(t).width;
+            ctx.fillStyle = "white";
+            ctx.fillText(t, (tw-w)/2, 50);
+            
+            dt.update();
+        }
+
+        return a;
+    }
 }
 
 

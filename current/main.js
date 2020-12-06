@@ -36,6 +36,17 @@ window.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    let arr = tree.nodes.map((nd,i) => ({nd, i, dist: nd.ball.position.length()}));
+    arr = arr.sort((a,b)=>a.dist-b.dist);
+
+    for(let i=0; i<50 && i<arr.length; i++) {
+        let a = viewer.createLabel();
+        a.setText("node#"+arr[i].i);
+        a.parent = arr[i].nd.ball;
+        arr[i].nd.label = a;
+    }
+
+
 });
 
 function hTranslate(direction, amount) {
@@ -45,3 +56,4 @@ function hTranslate(direction, amount) {
 function rotate(angle) {
     tree.transform(viewer.toWorldMatrix(BABYLON.Matrix.RotationY(angle)));
 }
+
