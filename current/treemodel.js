@@ -73,7 +73,7 @@ class TreeModel {
     }
 
     selectSubTree(nodeIndex) {
-        
+
     }
     pickNodeIndex(mousex, mousey) {
         let r = this.scene.pick(mousex, mousey);
