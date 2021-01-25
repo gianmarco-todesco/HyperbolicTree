@@ -12,7 +12,7 @@ window.addEventListener("DOMContentLoaded", function() {
 
     let scene = viewer.scene;
     
-    let axes = createAxes(scene);
+    // let axes = createAxes(scene);
 
     console.log("qui");
     fetch('data/data.json')

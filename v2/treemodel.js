@@ -10,6 +10,7 @@ class TreeModel {
         this.hMatrix = BABYLON.Matrix.RotationX(-Math.PI/2);
         this.material.setMatrix("hMatrix", this.hMatrix);
         
+        
         scene.registerBeforeRender(() => {
             if(this.animation) {
                 let ret = this.animation.tick();
@@ -17,6 +18,7 @@ class TreeModel {
             }
             this.updateLabels();            
         });
+        
     }
 
     /*
@@ -107,7 +109,7 @@ class TreeModel {
             width:0.9, 
             height:0.9}, 
             scene);
-        label.position.set(0,0.5,-0.1);
+        label.position.set(0,0.55,-0.1);
         label.bakeCurrentTransformIntoVertices();
         label.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
         label.parent = node.ball;
@@ -443,7 +445,7 @@ class TreeModelBuilder {
         this.model.updateNodesPositions();
 
         let ball = BABYLON.MeshBuilder.CreateIcoSphere('a',{
-            radius:0.2,
+            radius:0.1,
             subdivisions:5,
             flat:false
         }, scene);

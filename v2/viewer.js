@@ -19,7 +19,11 @@ class Viewer {
         
         camera.minZ = 0.001;
         camera.maxZ = 10;
-        // camera.wheelPrecision = 50;
+        camera.wheelPrecision = 50;
+        camera.lowerRadiusLimit = 0.5;
+        camera.upperRadiusLimit = 3.2;
+        
+
 
 	    // light
         this.light = new BABYLON.PointLight('light1', 
@@ -33,7 +37,11 @@ class Viewer {
     
     runRenderLoop() {
         let scene = this.scene;
-        this.engine.runRenderLoop(function() { scene.render(); });
+        let globe = this.globe;
+        let camera = this.camera;
+        this.engine.runRenderLoop(function() { 
+            scene.render(); 
+        });
     }
 
     attachControl() {
@@ -41,13 +49,16 @@ class Viewer {
         let canvas = this.canvas;
         camera.attachControl(canvas,true);
         camera.inputs.remove(camera.inputs.attached.keyboard);
-        camera.inputs.remove(camera.inputs.attached.mousewheel);
+        // camera.inputs.remove(camera.inputs.attached.mousewheel);
     }
 
     buildScene() {
         let globe = this.globe = new GlobeModel(this.scene, 1);
         let camera = this.camera;
-        this.scene.registerBeforeRender(() => globe.updateOutlineCircle(camera));    
+        camera.onViewMatrixChangedObservable.add(() => {
+            globe.updateOutlineCircle(camera)
+        });
+        // this.scene.registerBeforeRender(() => globe.updateOutlineCircle(camera));    
     }
 
     toWorldMatrix(localMatrix) {
@@ -198,7 +209,27 @@ class GlobeModel {
     updateOutlineCircle(camera) {
         const globeRadius = this.globeRadius;
         let circle = this.outlineCircle;
+
         let p = camera.position;
+
+        //p = BABYLON.Vector3.TransformCoordinates(BABYLON.Vector3.Zero(), camera.getWorldMatrix());
+
+        /*
+        var cosa = Math.cos(camera.alpha);
+        var sina = Math.sin(camera.alpha);
+        var cosb = Math.cos(camera.beta);
+        var sinb = Math.sin(camera.beta);
+        if (sinb === 0) {
+            sinb = 0.0001;
+        }
+        let p = new BABYLON.Vector3(
+            camera.radius * cosa * sinb, 
+            camera.radius * cosb, 
+            -camera.radius * sina * sinb);
+
+        */
+
+
         let d = p.length();
         if(d<globeRadius*1.1) 
             circle.visibility = false;
@@ -206,7 +237,8 @@ class GlobeModel {
             circle.visibility = true;
             let r = globeRadius*d/Math.sqrt(d*d-globeRadius*globeRadius);
             circle.lookAt(p);
-            circle.scaling.x = circle.scaling.y = circle.scaling.z = r;    
+            circle.scaling.set(r,r,r);
+                
         }        
     }
 };
