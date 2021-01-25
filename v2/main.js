@@ -14,7 +14,7 @@ window.addEventListener("DOMContentLoaded", function() {
     
     // let axes = createAxes(scene);
 
-    console.log("qui");
+    
     fetch('data/data.json')
         .then(response => response.json())
         .then(data => {
